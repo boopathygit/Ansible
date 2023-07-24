@@ -1,0 +1,143 @@
+---
+ - hosts: all
+   ignore_errors: yes
+   vars:
+     packagelist: []
+     packagename: "WalletService"
+   tasks:
+     - name: Collecting service details
+       ansible.windows.win_service_info:
+       register: Service_details
+
+     - name: Displayingdetails
+       set_fact:
+          service_list: "{{ Service_details['services']|map(attribute='display_name')|list }}"
+
+     - name: Capturing date of server {{ inventory_hostname }}
+       debug:
+         var: ansible_date_time.date
+       register: current_date
+     - name: Displaying date details
+       set_fact:
+           current_date_final: "{{ current_date['ansible_date_time.date'] }}"
+
+     - name: Collecting Count of services in the server
+       set_fact:
+           cos: "{{ Service_details['services']|map(attribute='display_name')|list |length }}"
+     - name: Displaying length
+       debug:
+         msg: "{{ cos }}"
+
+     - name: Checking service "{{ item }}"status
+       ansible.windows.win_service:
+          name: "{{ item }}"
+       register: All_service_status
+       with_items:
+         - "{{ service_list[0:cos|int-200] }}"
+
+     - name: Displaying service status
+       debug:
+         msg:
+           - "Service_name: {{ All_service_status['results'][item|int]['item'] }}"
+           - "Service_status: {{ All_service_status['results'][item|int]['state'] }}"
+       with_sequence: 0-3
+
+     - name: Displaying Stopped services
+       debug:
+         msg:
+          - "Service_name: {{ All_service_status['results'][item|int]['item'] }}"
+          - "Service_status: {{ All_service_status['results'][item|int]['state'] }}"
+       when:
+         -  All_service_status['results'][item|int]['state']  == "stopped"
+       with_sequence: 0-3
+
+     - name: Adding Stopped services
+       lineinfile:
+            path: postcheck_{{ inventory_hostname}}_{{ current_date_final }}.txt
+            line: "Below are the Stopped services details"
+            create: yes
+       delegate_to: localhost
+
+     - name: Writing content to file
+       lineinfile:
+           path: postcheck_{{ inventory_hostname}}_{{ current_date_final }}.txt
+           line:
+             - "Service_name: {{ All_service_status['results'][item|int]['item'] |string}} Service_status: {{ All_service_status['results'][item|int]['state']|string }}"
+           insertafter: EOF
+       delegate_to: localhost
+       when:
+         -  All_service_status['results'][item|int]['state']  == "stopped"
+       with_sequence: 0-3
+     - name: Displaying content type
+       debug:
+         msg: "Service_name: {{ All_service_status['results'][item|int]['item'] }} Service_status: {{ All_service_status['results'][item|int]['state'][0::] }}"
+       when:
+         -  All_service_status['results'][item|int]['state']  == "stopped"
+       with_sequence: 0-3
+
+     - name: Adding Running services
+       lineinfile:
+           path: postcheck_{{ inventory_hostname}}_{{ current_date_final }}.txt
+           line: "Below are the Running Services details"
+           insertafter: EOF
+       delegate_to: localhost
+
+     - name: Display Running services
+       debug:
+         msg:
+          - "Service_name: {{ All_service_status['results'][item|int]['item'] }}"
+          - "Service_status: {{ All_service_status['results'][item|int]['state'] }}"
+       when:
+         -  All_service_status['results'][item|int]['state']  == "running"
+       with_sequence: 0-3
+
+     - name: Writing content to file
+       lineinfile:
+           path: postcheck_{{ inventory_hostname}}_{{ current_date_final }}.txt
+           line:
+             - "Service_name: {{ All_service_status['results'][item|int]['item'] }} Service_status: {{ All_service_status['results'][item|int]['state'] }}"
+           insertafter: EOF
+           create: yes
+       delegate_to: localhost
+       when:
+         -  All_service_status['results'][item|int]['state']  == "running"
+       with_sequence: 0-3
+
+     - name:
+       debug:
+         msg: "{{ service_list|type_debug }}"
+
+     - name: Creating Package list
+       set_fact:
+          packagelist: "{{ packagelist +['{{ packagename }}'] }}"
+       with_items:
+         - "{{ service_list }}"
+       when:
+         - item == "{{ packagename }}"
+
+     - name: Displaying full list
+       debug:
+          msg: "{{ packagelist }}"
+
+     - name: Displaying WalletService service
+       debug:
+          msg: "service {{ packagename }} is running }}"
+       when:
+         - sestatus.state == "running"
+         - packagelist|length|int  >0
+
+     - name: Displaying WalletService service
+       debug:
+         msg: "service {{ packagename }} is Stopped "
+       when:
+         - sestatus.state == "stopped"
+         - packagelist|length|int  >0
+
+     - name: Capturing the source path
+       set_fact:
+           srcpath: "postcheck_{{ inventory_hostname}}_{{ current_date_final }}.txt"
+
+     - name: Copy the file to {{ inventory_hostname}}
+       win_copy:
+          src: "{{ srcpath }}"
+          dest: C:\
