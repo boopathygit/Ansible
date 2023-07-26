@@ -1,0 +1,6 @@
+---
+- name: Connection Test
+  hosts: all
+  tasks:
+    - name: Linux Server connectivity test
+      shell: "uname -n"
