@@ -3,5 +3,3 @@ all:
     test_inv:
       hosts:
         linux.server1.com:
-        linux.server2.com:
-        linux.server3.com:
