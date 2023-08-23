@@ -1,0 +1,6 @@
+---
+- name: testing vault variable
+  hosts: localhost
+  gather_facts: false
+  role: 
+    test
