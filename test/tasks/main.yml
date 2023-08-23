@@ -1,5 +1,4 @@
 ---
-- name: Testing Vault passwoord
-  hosts: localhost
-  gather_facts: false
-  tasks: 
+- name: debug
+  debug:
+    msg: "{{ username }}" and "{{ password }}"
