@@ -1,4 +1,4 @@
 ---
 - name: debug
   debug:
-    msg: "{{ username }}" and "{{ password }}"
+    msg: "Username is {{ username }} and password is {{ password }}"
