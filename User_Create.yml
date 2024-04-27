@@ -2,8 +2,8 @@
 - name: Create user and group
   hosts: all
   gather_facts: false
-  #become: yes
-  #become_user: ec2-user
+  become: yes
+  become_user: ec2-user
   become_method: sudo
 
   tasks:
