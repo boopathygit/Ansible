@@ -2,6 +2,8 @@
 - name: Create user and group
   hosts: all
   gather_facts: false
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
   become: yes
   become_user: root
   become_method: sudo
