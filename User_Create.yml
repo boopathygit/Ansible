@@ -10,12 +10,12 @@
     - name: create group test
       group:
         name: boogroup
-        state: present
+        state: absent
 
     - name: create user boopathy
       user:
         name: boopathy
         password: "{{ 'Open@123' | password_hash('sha512') }}"
-        state: present
+        state: absent
         group: boogroup
         groups: boogroup
