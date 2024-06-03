@@ -1,0 +1,23 @@
+---
+- name: Create user and group
+  hosts: all
+  gather_facts: false
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  become: yes
+  become_user: root
+  become_method: sudo
+
+  tasks:
+    - name: create group test
+      group:
+        name: "{{ Agroup }}"
+        state: present
+
+    - name: create user boopathy
+      user:
+        name: "{{ Auser }}"
+        password: "{{ 'Open@123' | password_hash('sha512') }}"
+        state: present
+        group: "{{ Agroup }}"
+        groups: "{{ Agroup }}"
